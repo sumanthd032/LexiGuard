@@ -1,15 +1,13 @@
 import os
 import vertexai
 from vertexai.generative_models import GenerativeModel, Part
-import vertexai.preview.generative_models as generative_models
 from dotenv import load_dotenv
 import json
+from google.cloud import discoveryengine_v1 as discoveryengine
 
 load_dotenv()
-
 project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
-if not project_id:
-    raise ValueError("GOOGLE_CLOUD_PROJECT environment variable not set.")
+datastore_id = os.getenv("DATASTORE_ID")
 vertexai.init(project=project_id, location="us-central1")
 
 
@@ -63,13 +61,26 @@ def analyze_clauses_from_text(text_content: str, persona: str, language: str) ->
         "response_mime_type": "application/json",
     }
 
-    response = pro_model.generate_content(
+    initial_response = pro_model.generate_content(
         [text_content, prompt],
         generation_config=generation_config,
         stream=False
     )
-    
-    return response.text.strip().replace("```json", "").replace("```", "")
+    try:
+        analysis_data = json.loads(initial_response.text)
+        
+        for clause in analysis_data.get("clauses", []):
+            if clause.get("risk_level") == "Critical":
+                print(f"Found critical clause, running RAG check: {clause['clause_text'][:50]}...")
+                rag_warning = get_rag_warning_for_clause(clause['clause_text'])
+                if rag_warning:
+                    clause['rag_warning'] = rag_warning
+        
+        return json.dumps(analysis_data)
+        
+    except (json.JSONDecodeError, Exception) as e:
+        print(f"Error processing AI response or RAG: {e}")
+        return initial_response.text
 
 def get_chat_response(document_context: str, question: str, chat_history: list = []) -> str:
     """
@@ -98,3 +109,36 @@ def get_chat_response(document_context: str, question: str, chat_history: list =
     response = pro_model.generate_content(prompt)
     
     return response.text
+
+def get_rag_warning_for_clause(clause_text: str) -> str | None:
+    """Searches the knowledge base for information related to a specific clause."""
+    if not datastore_id:
+        print("Warning: DATASTORE_ID not set. Skipping RAG check.")
+        return None
+    client = discoveryengine.SearchServiceClient()
+    serving_config = client.serving_config_path(
+        project=project_id,
+        location="global",
+        data_store=datastore_id,
+        serving_config="default_config",
+    )
+
+    request = discoveryengine.SearchRequest(
+        serving_config=serving_config,
+        query=f"potential issues or regulations related to the following contract clause: {clause_text}",
+        page_size=1,
+    )
+    
+    try:
+        response = client.search(request)
+        if response.results:
+            top_result = response.results[0].document
+            source_title = top_result.derived_struct_data['title']
+            snippet = top_result.derived_struct_data['snippets'][0]['snippet']
+            
+            warning = f"**Evidence Found in '{source_title}':** This clause may be related to regulations on '{snippet}...'. You should review this carefully."
+            return warning
+        return None
+    except Exception as e:
+        print(f"Error during RAG search: {e}")
+        return None

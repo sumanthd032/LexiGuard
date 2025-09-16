@@ -1,7 +1,14 @@
 import React from 'react';
 import type { AnalysisResult, Clause, ChatMessage } from '../types';
 import { Disclosure } from '@headlessui/react';
-import { ChevronUpIcon, CheckCircleIcon, ExclamationTriangleIcon, ShieldExclamationIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/solid';
+import { 
+  ChevronUpIcon, 
+  CheckCircleIcon, 
+  ExclamationTriangleIcon, 
+  ShieldExclamationIcon, 
+  Bars3BottomLeftIcon,
+  InformationCircleIcon 
+} from '@heroicons/react/24/solid';
 import ChatPanel from './ChatPanel';
 import AudioPlayer from './AudioPlayer';
 
@@ -52,8 +59,23 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
               />
             </Disclosure.Button>
             <Disclosure.Panel className="px-4 pt-3 pb-4 text-sm text-brand-text">
+              {clause.rag_warning && (
+                <div className="mb-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-r-md">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <InformationCircleIcon className="h-5 w-5 text-yellow-500" />
+                    </div>
+                    <div className="ml-3">
+                      {/* Using dangerouslySetInnerHTML to render bold tags from the backend */}
+                      <p className="text-sm" dangerouslySetInnerHTML={{ __html: clause.rag_warning.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <p className="font-semibold mb-2">Plain Language Explanation:</p>
               <p className="mb-4">{clause.explanation}</p>
+              
               <p className="font-semibold mb-2 text-gray-500">Original Clause Text:</p>
               <blockquote className="text-gray-600 border-l-2 border-gray-300 pl-3 italic">
                 {clause.clause_text}
