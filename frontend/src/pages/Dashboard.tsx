@@ -1,9 +1,8 @@
-// frontend/src/pages/Dashboard.tsx
 import React, { useState } from 'react';
 import Header from '../components/Header';
 import UploadZone from '../components/UploadZone';
 import AnalysisPanel from '../components/AnalysisPanel';
-import HistoryPanel from '../components/HistoryPanel'; 
+import HistoryPanel from '../components/HistoryPanel';
 import type { AnalysisResult, ChatMessage } from '../types';
 import { useAuth } from '../AuthContext';
 import { ArrowUpOnSquareIcon, ClockIcon } from '@heroicons/react/24/outline';
@@ -19,7 +18,6 @@ const Dashboard: React.FC = () => {
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const { user } = useAuth();
 
-    // ... (All handler functions: handleFileSelect, handleAnalyze, handleSendMessage remain exactly the same)
     const handleFileSelect = (file: File | null) => {
         setUploadedFile(file);
         setAnalysis(null);
@@ -27,8 +25,91 @@ const Dashboard: React.FC = () => {
         setChatHistory([]);
     };
 
-    const handleAnalyze = async () => { /* ... same as before ... */ };
-    const handleSendMessage = async (message: string) => { /* ... same as before ... */ };
+    const handleAnalyze = async () => {
+        if (!uploadedFile) {
+          setError("Please select a file first.");
+          return;
+        }
+    
+        setIsLoading(true);
+        setError(null);
+        setAnalysis(null);
+        setChatHistory([]);
+    
+        const formData = new FormData();
+        formData.append('file', uploadedFile);
+        formData.append('persona', persona);
+        formData.append('language', language);
+    
+        try {
+          const response = await fetch("http://127.0.0.1:8000/api/analyze", {
+            method: 'POST',
+            body: formData,
+          });
+    
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Analysis failed. Please try again.');
+          }
+    
+          const result: AnalysisResult = await response.json();
+          setAnalysis(result);
+    
+          if (user) {
+            const token = await user.getIdToken();
+            await fetch("http://127.0.0.1:8000/api/analyses", {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                file_name: uploadedFile.name,
+                analysis_data: result,
+                timestamp: new Date().toISOString() // Add timestamp for sorting
+              })
+            });
+          }
+        } catch (err: any) {
+          setError(err.message || 'An unknown error occurred.');
+        } finally {
+          setIsLoading(false);
+        }
+    };
+    
+    const handleSendMessage = async (message: string) => {
+        if (!analysis?.full_text) return;
+    
+        const userMessage: ChatMessage = { role: 'user', content: message };
+        const loadingMessage: ChatMessage = { role: 'loading', content: '...' };
+    
+        setChatHistory(prev => [...prev, userMessage, loadingMessage]);
+    
+        try {
+          const response = await fetch("http://127.0.0.1:8000/api/chat", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              document_context: analysis.full_text,
+              message: message,
+            }),
+          });
+    
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Chat API failed.');
+          }
+    
+          const result = await response.json();
+          const modelMessage: ChatMessage = { role: 'model', content: result.reply };
+          
+          setChatHistory(prev => [...prev.slice(0, -1), modelMessage]);
+    
+        } catch (err: any) {
+          const errorMessage: ChatMessage = { role: 'model', content: `Sorry, I encountered an error: ${err.message}` };
+          setChatHistory(prev => [...prev.slice(0, -1), errorMessage]);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-brand-gray to-gray-200">
@@ -36,7 +117,6 @@ const Dashboard: React.FC = () => {
             <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)]">
                 
-                {/* --- UPGRADED LEFT PANEL WITH TABS --- */}
                 <div className="flex flex-col">
                     <div className="mb-4">
                         <div className="border-b border-gray-300">
@@ -83,7 +163,6 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* --- RIGHT PANEL --- */}
                 <div className="h-full">
                     <AnalysisPanel 
                     analysis={analysis}
