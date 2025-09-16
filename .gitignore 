@@ -4,6 +4,7 @@ frontend/dist/
 
 # Python virtual environment and cache
 backend/venv/
+backend/.env
 backend/__pycache__/
 backend/.pytest_cache/
 backend/instance/

@@ -1,25 +1,58 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Header from './components/Header';
 import UploadZone from './components/UploadZone';
 import AnalysisPanel from './components/AnalysisPanel';
 
-function App() {
+// Define the structure of our analysis result
+interface AnalysisResult {
+  extracted_text: string;
+  summary: string;
+}
 
-  // This function will handle the file upload to the backend
-  const handleFileUpload = async (file: File) => {
-    console.log('File selected:', file.name);
-    
-    // Create a FormData object to send the file
+function App() {
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFileSelect = (file: File | null) => {
+    setUploadedFile(file);
+    // Reset state when a new file is selected or removed
+    setAnalysis(null);
+    setError(null);
+  };
+
+  const handleAnalyze = async () => {
+    if (!uploadedFile) {
+      setError("Please select a file first.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    setAnalysis(null);
+
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', uploadedFile);
 
     try {
-      // We will make the API call here in a future step
-      console.log('Preparing to send file to backend...');
-      // For now, let's just log it. The actual fetch call will be added
-      // once the user clicks "Analyze" in a later phase.
-    } catch (error) {
-      console.error('Error uploading file:', error);
+      const response = await fetch("http://127.0.0.1:8000/api/analyze", {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Analysis failed. Please try again.');
+      }
+
+      const result: AnalysisResult = await response.json();
+      setAnalysis(result);
+
+    } catch (err: any) {
+      setError(err.message || 'An unknown error occurred.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -30,12 +63,22 @@ function App() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)]">
           {/* Left Panel: Upload */}
           <div className="h-full">
-            <UploadZone onFileAccepted={handleFileUpload} />
+            <UploadZone 
+              uploadedFile={uploadedFile}
+              onFileSelect={handleFileSelect}
+              onAnalyze={handleAnalyze}
+              isLoading={isLoading}
+              error={error}
+            />
           </div>
 
           {/* Right Panel: Analysis */}
           <div className="h-full">
-            <AnalysisPanel />
+            <AnalysisPanel 
+              analysis={analysis}
+              isLoading={isLoading}
+              error={error && !analysis ? "Failed to generate analysis." : null} // Only show panel error if analysis fails
+            />
           </div>
         </div>
       </main>
