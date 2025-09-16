@@ -1,8 +1,9 @@
 import React from 'react';
-import type { AnalysisResult, ChatMessage, Clause } from '../types';
+import type { AnalysisResult, Clause, ChatMessage } from '../types';
 import { Disclosure } from '@headlessui/react';
-import ChatPanel from './ChatPanel';
 import { ChevronUpIcon, CheckCircleIcon, ExclamationTriangleIcon, ShieldExclamationIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/solid';
+import ChatPanel from './ChatPanel';
+import AudioPlayer from './AudioPlayer';
 
 interface AnalysisPanelProps {
   analysis: AnalysisResult | null;
@@ -51,7 +52,7 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
               />
             </Disclosure.Button>
             <Disclosure.Panel className="px-4 pt-3 pb-4 text-sm text-brand-text">
-              <p className="font-semibold mb-2">Plain English Explanation:</p>
+              <p className="font-semibold mb-2">Plain Language Explanation:</p>
               <p className="mb-4">{clause.explanation}</p>
               <p className="font-semibold mb-2 text-gray-500">Original Clause Text:</p>
               <blockquote className="text-gray-600 border-l-2 border-gray-300 pl-3 italic">
@@ -90,17 +91,29 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
     if (isLoading) return <LoadingSpinner />;
     if (error) return <div className="text-danger p-4 bg-red-50 rounded-md"><strong>Error:</strong> {error}</div>;
     if (analysis && analysis.clauses) {
+      const textForSpeech = `
+        Summary: ${analysis.summary}. 
+        Now, for the clause analysis. 
+        ${analysis.clauses.map((c, i) => `Clause ${i + 1}. Risk level: ${c.risk_level}. Explanation: ${c.explanation}.`).join(' ')}
+      `;
+
       return (
         <div className="h-full flex flex-col">
           <div className="mb-4 p-4 bg-brand-gray rounded-lg">
-              {/* ... Summary display ... */}
+            <div className="flex justify-between items-start">
+              <h3 className="text-lg font-bold text-brand-blue font-display flex items-center mb-2">
+                  <Bars3BottomLeftIcon className="h-6 w-6 mr-2 text-brand-green" />
+                  AI Summary
+              </h3>
+              <AudioPlayer textToRead={textForSpeech} />
+            </div>
+            <p className="text-sm text-brand-text">{analysis.summary}</p>
           </div>
           <div className="flex-grow overflow-y-auto pr-2">
               {analysis.clauses.map((clause, index) => (
                   <ClauseItem key={index} clause={clause} />
               ))}
           </div>
-          {/* --- RENDER THE CHAT PANEL HERE --- */}
           <ChatPanel 
             chatHistory={chatHistory}
             onSendMessage={onSendMessage}

@@ -10,11 +10,11 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [persona, setPersona] = useState<string>('General User');
+  const [language, setLanguage] = useState<string>('English');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
 
   const handleFileSelect = (file: File | null) => {
     setUploadedFile(file);
-    // Reset all states when a new file is selected or removed
     setAnalysis(null);
     setError(null);
     setChatHistory([]);
@@ -29,11 +29,12 @@ function App() {
     setIsLoading(true);
     setError(null);
     setAnalysis(null);
-    setChatHistory([]); // Reset chat on re-analysis
+    setChatHistory([]);
 
     const formData = new FormData();
     formData.append('file', uploadedFile);
     formData.append('persona', persona);
+    formData.append('language', language);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/analyze", {
@@ -57,10 +58,11 @@ function App() {
   };
 
   const handleSendMessage = async (message: string) => {
-    if (!analysis?.full_text) return; 
+    if (!analysis?.full_text) return;
 
     const userMessage: ChatMessage = { role: 'user', content: message };
     const loadingMessage: ChatMessage = { role: 'loading', content: '...' };
+
     setChatHistory(prev => [...prev, userMessage, loadingMessage]);
 
     try {
@@ -94,7 +96,6 @@ function App() {
       <Header />
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)]">
-          {/* Left Panel: Upload and Controls */}
           <div className="h-full">
             <UploadZone 
               uploadedFile={uploadedFile}
@@ -104,10 +105,10 @@ function App() {
               error={error}
               persona={persona}
               onPersonaChange={setPersona}
+              language={language}
+              onLanguageChange={setLanguage}
             />
           </div>
-
-          {/* Right Panel: Analysis and Chat */}
           <div className="h-full">
             <AnalysisPanel 
               analysis={analysis}

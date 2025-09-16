@@ -20,42 +20,41 @@ def extract_text_from_document(file_content: bytes, mime_type: str) -> str:
     response = vision_model.generate_content([document_part, prompt], stream=False)
     return response.text
 
-def analyze_clauses_from_text(text_content: str, persona: str) -> str:
+def analyze_clauses_from_text(text_content: str, persona: str, language: str) -> str:
     """
-    Uses Gemini 1.0 Pro to analyze extracted text, with explanations
-    tailored to a specific user persona.
+    Uses Gemini 2.5 Pro to analyze extracted text, with explanations
+    tailored to a specific user persona and translated to a target language.
     """
     pro_model = GenerativeModel("gemini-2.5-pro")
     
     prompt = f"""
-    You are a meticulous legal analyst AI. Your task is to dissect the provided document text into individual clauses and evaluate each one for potential risks.
+    You are a meticulous legal analyst AI. Your task is to dissect the provided document text into individual clauses and evaluate each one for potential risks. Perform your analysis in English first, then translate as the final step.
 
-    *** VERY IMPORTANT CONTEXT ***
-    Your entire analysis and all explanations MUST be tailored to the perspective of a "{persona}".
-    - For a "Student", focus on deposit returns, guest policies, noise complaints, and short-term lease penalties.
-    - For a "Small Business", focus on liability, commercial use clauses, insurance requirements, and termination notice periods.
-    - For a "Senior Citizen", focus on accessibility, long-term stability, rent control, and clauses related to health or assistance services.
+    *** CONTEXT ***
+    Your analysis and all explanations MUST be tailored to the perspective of a "{persona}".
+    - For a "Student", focus on deposit returns, guest policies, etc.
+    - For a "Small Business", focus on liability, commercial use, etc.
+    - For a "Senior Citizen", focus on accessibility, long-term stability, etc.
     - For a "General User", provide balanced, general-purpose advice.
-    The `explanation` for each clause must directly address the concerns of the "{persona}".
 
-    Analyze the document text and provide a response in a single, clean JSON object. Do not include any text, markdown, or formatting outside of the JSON object.
-    The JSON object must have the exact structure as defined below:
+    *** OUTPUT STRUCTURE ***
+    Provide a response in a single, clean JSON object with the exact structure defined below:
     {{
-      "summary": "A concise, one-paragraph summary of the document's purpose, written from the perspective of a {persona}.",
+      "summary": "A concise summary of the document's purpose, from the perspective of a {persona}.",
       "clauses": [
         {{
           "clause_text": "The original text of the clause...",
           "risk_level": "Neutral | Attention | Critical",
-          "explanation": "A simple, one-sentence explanation of this clause, specifically tailored for a {persona}."
+          "explanation": "A simple explanation of this clause, tailored for a {persona}."
         }}
       ]
     }}
 
-    Assign a `risk_level` based on the following criteria:
-    - Neutral: Standard, informational clauses.
-    - Attention: Clauses requiring specific awareness (e.g., payment schedules, late fees).
-    - Critical: Potentially unfair or high-risk clauses (e.g., waiver of rights, automatic renewals).
+    *** FINAL AND MOST IMPORTANT INSTRUCTION ***
+    After generating the entire JSON object in English, you MUST translate the text values for the "summary" key and for every "explanation" key into **{language}**.
+    The keys themselves ("summary", "clauses", etc.) and the values for "clause_text" and "risk_level" MUST remain in English. Only translate the summary and explanations.
     """
+
 
     generation_config = {
         "max_output_tokens": 8192,

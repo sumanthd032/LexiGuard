@@ -1,6 +1,7 @@
 import React from 'react';
 import { DocumentArrowUpIcon, XCircleIcon, SparklesIcon } from '@heroicons/react/24/solid';
 import PersonaSelector from './PersonaSelector';
+import LanguageSelector from './LanguageSelector';
 
 interface UploadZoneProps {
   uploadedFile: File | null;
@@ -10,9 +11,21 @@ interface UploadZoneProps {
   error: string | null;
   persona: string;
   onPersonaChange: (persona: string) => void;
+  language: string;
+  onLanguageChange: (language: string) => void;
 }
 
-const UploadZone: React.FC<UploadZoneProps> = ({ uploadedFile, onFileSelect, onAnalyze, isLoading, error, persona, onPersonaChange }) => {
+const UploadZone: React.FC<UploadZoneProps> = ({ 
+  uploadedFile, 
+  onFileSelect, 
+  onAnalyze, 
+  isLoading, 
+  error, 
+  persona, 
+  onPersonaChange,
+  language,
+  onLanguageChange
+}) => {
   const removeFile = () => {
     onFileSelect(null);
   };
@@ -41,13 +54,14 @@ const UploadZone: React.FC<UploadZoneProps> = ({ uploadedFile, onFileSelect, onA
               </button>
             </div>
             
-            {/* --- PLACE THE NEW COMPONENT HERE --- */}
             <PersonaSelector selectedPersona={persona} onPersonaChange={onPersonaChange} />
+            
+            <LanguageSelector selectedLanguage={language} onLanguageChange={onLanguageChange} />
 
             <button
               onClick={onAnalyze}
               disabled={isLoading}
-              className="w-full bg-brand-green hover:bg-opacity-90 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full mt-4 bg-brand-green hover:bg-opacity-90 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                  <>
