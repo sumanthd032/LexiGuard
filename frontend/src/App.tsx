@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import UploadZone from './components/UploadZone';
 import AnalysisPanel from './components/AnalysisPanel';
-import type { AnalysisResult } from './types'; 
+import type { AnalysisResult } from './types';
 
 function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  // Update the state to use our new, structured type
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [persona, setPersona] = useState<string>('General User');
 
   const handleFileSelect = (file: File | null) => {
     setUploadedFile(file);
@@ -29,6 +29,7 @@ function App() {
 
     const formData = new FormData();
     formData.append('file', uploadedFile);
+    formData.append('persona', persona);
 
     try {
       const response = await fetch("http://127.0.0.1:8000/api/analyze", {
@@ -52,7 +53,6 @@ function App() {
   };
 
   return (
-    // ... JSX remains exactly the same as Phase 2 ...
     <div className="min-h-screen bg-brand-gray">
       <Header />
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -64,6 +64,8 @@ function App() {
               onAnalyze={handleAnalyze}
               isLoading={isLoading}
               error={error}
+              persona={persona}
+              onPersonaChange={setPersona}
             />
           </div>
           <div className="h-full">
