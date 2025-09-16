@@ -1,6 +1,7 @@
 import React from 'react';
+import { Link } from 'react-router-dom'; 
 import { ShieldCheckIcon, DocumentTextIcon, ChatBubbleLeftRightIcon, LanguageIcon } from '@heroicons/react/24/outline';
-import Header from '../components/Header'; 
+import Header from '../components/Header';
 
 const features = [
   {
@@ -38,16 +39,17 @@ const LandingPage: React.FC = () => {
                     LexiGuard is your personal contract guardian. Upload any legal document, and our generative AI will demystify the jargon, highlight risks, and answer your questions in plain language.
                   </p>
                   <div className="mt-10 sm:mt-12">
-                    {/* This button would link to your AuthPage or App */}
-                    <button className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-green hover:bg-opacity-90 md:py-4 md:text-lg md:px-10">
+                    <Link
+                      to="/auth"
+                      className="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-brand-green hover:bg-opacity-90 md:py-4 md:text-lg md:px-10"
+                    >
                       Get Started
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </div>
               <div className="mt-12 -mb-16 sm:-mb-48 lg:m-0 lg:relative">
                 <div className="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:max-w-none lg:px-0">
-                  {/* You can add a decorative image here */}
                   <ShieldCheckIcon className="w-full lg:absolute lg:inset-y-0 lg:left-0 lg:h-full lg:w-auto lg:max-w-none text-gray-200" />
                 </div>
               </div>
