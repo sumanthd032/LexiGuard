@@ -1,7 +1,7 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import json
-from ai_processor import analyze_document_with_gemini
+from ai_processor import extract_text_from_document, analyze_clauses_from_text
 
 app = FastAPI(
     title="LexiGuard API",
@@ -30,19 +30,28 @@ def read_root():
 @app.post("/api/analyze")
 async def analyze_document_endpoint(file: UploadFile = File(...)):
     """
-    Accepts a document, sends it to the Gemini API for analysis,
-    and returns the extracted text and summary.
+    Orchestrates the two-step AI analysis pipeline.
+    1. Extracts text using Gemini Vision.
+    2. Analyzes clauses using Gemini Pro.
     """
     try:
         file_content = await file.read()
         mime_type = file.content_type
 
-        analysis_result_str = analyze_document_with_gemini(file_content, mime_type)
+        print("Step 1: Extracting text from document...")
+        extracted_text = extract_text_from_document(file_content, mime_type)
+        if not extracted_text:
+            raise HTTPException(status_code=500, detail="AI failed to extract text from the document.")
+
+        print("Step 2: Analyzing clauses from extracted text...")
+        analysis_result_str = analyze_clauses_from_text(extracted_text)
         
         try:
             analysis_result_json = json.loads(analysis_result_str)
             return analysis_result_json
         except json.JSONDecodeError:
+            print("Error: AI returned an invalid JSON format.")
+            print("Raw AI output:", analysis_result_str)
             raise HTTPException(status_code=500, detail="AI returned an invalid format.")
 
     except Exception as e:

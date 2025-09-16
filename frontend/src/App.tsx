@@ -2,22 +2,17 @@ import React, { useState } from 'react';
 import Header from './components/Header';
 import UploadZone from './components/UploadZone';
 import AnalysisPanel from './components/AnalysisPanel';
-
-// Define the structure of our analysis result
-interface AnalysisResult {
-  extracted_text: string;
-  summary: string;
-}
+import type { AnalysisResult } from './types'; 
 
 function App() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  // Update the state to use our new, structured type
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleFileSelect = (file: File | null) => {
     setUploadedFile(file);
-    // Reset state when a new file is selected or removed
     setAnalysis(null);
     setError(null);
   };
@@ -57,11 +52,11 @@ function App() {
   };
 
   return (
+    // ... JSX remains exactly the same as Phase 2 ...
     <div className="min-h-screen bg-brand-gray">
       <Header />
       <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)]">
-          {/* Left Panel: Upload */}
           <div className="h-full">
             <UploadZone 
               uploadedFile={uploadedFile}
@@ -71,13 +66,11 @@ function App() {
               error={error}
             />
           </div>
-
-          {/* Right Panel: Analysis */}
           <div className="h-full">
             <AnalysisPanel 
               analysis={analysis}
               isLoading={isLoading}
-              error={error && !analysis ? "Failed to generate analysis." : null} // Only show panel error if analysis fails
+              error={error && !analysis ? "Failed to generate analysis." : null}
             />
           </div>
         </div>
