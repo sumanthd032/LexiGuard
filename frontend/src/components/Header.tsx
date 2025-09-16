@@ -3,6 +3,7 @@ import { ShieldCheckIcon } from '@heroicons/react/24/solid';
 import { useAuth } from '../AuthContext';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebase';
+import { Link } from 'react-router-dom'; 
 
 const Header: React.FC = () => {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ const Header: React.FC = () => {
           </div>
           <div className="flex items-center">
             {user ? (
+              // If user is logged in, show their email and a sign-out button
               <div className="flex items-center space-x-4">
                 <p className="text-sm text-brand-text hidden sm:block">
                   Welcome, <span className="font-semibold">{user.email}</span>
@@ -40,9 +42,13 @@ const Header: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <button className="bg-white hover:bg-gray-100 text-brand-text font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm">
+              // If user is not logged in, show a sign-in button that links to the auth page
+              <Link
+                to="/auth"
+                className="bg-white hover:bg-gray-100 text-brand-text font-semibold py-2 px-4 border border-gray-300 rounded-lg shadow-sm"
+              >
                 Sign In
-              </button>
+              </Link>
             )}
           </div>
         </div>

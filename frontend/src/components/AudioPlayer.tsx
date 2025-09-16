@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { SpeakerWaveIcon, StopIcon } from '@heroicons/react/24/solid';
 
 interface AudioPlayerProps {
@@ -7,24 +7,47 @@ interface AudioPlayerProps {
 
 const AudioPlayer: React.FC<AudioPlayerProps> = ({ textToRead }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const synth = window.speechSynthesis;
+  const [canSpeak, setCanSpeak] = useState(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
+    const synth = window.speechSynthesis;
+    
+    const checkVoices = () => {
+      if (synth.getVoices().length > 0) {
+        setCanSpeak(true);
+      }
+    };
+
+    checkVoices();
+    synth.onvoiceschanged = checkVoices;
+
     return () => {
+      synth.onvoiceschanged = null;
       if (synth.speaking) {
         synth.cancel();
       }
     };
-  }, [synth]);
+  }, []);
 
   const handleToggleSpeech = () => {
+    const synth = window.speechSynthesis;
+
     if (isSpeaking) {
-      synth.cancel();
+      synth.cancel(); 
       setIsSpeaking(false);
-    } else {
+    } else if (canSpeak) {
       const utterance = new SpeechSynthesisUtterance(textToRead);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utteranceRef.current = utterance; 
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+      };
+      utterance.onerror = (event) => {
+        console.error('SpeechSynthesisUtterance.onerror', event);
+        setIsSpeaking(false);
+      };
+
       synth.speak(utterance);
       setIsSpeaking(true);
     }
@@ -33,7 +56,9 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({ textToRead }) => {
   return (
     <button
       onClick={handleToggleSpeech}
-      className="flex items-center space-x-2 px-3 py-1.5 text-sm font-semibold text-brand-blue bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+      disabled={!canSpeak} 
+      title={canSpeak ? "Read analysis aloud" : "Text-to-speech not available"}
+      className="flex items-center space-x-2 px-3 py-1.5 text-sm font-semibold text-brand-blue bg-gray-100 hover:bg-gray-200 rounded-full transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
     >
       {isSpeaking ? (
         <>

@@ -1,3 +1,4 @@
+// frontend/src/components/AnalysisPanel.tsx
 import React from 'react';
 import type { AnalysisResult, Clause, ChatMessage } from '../types';
 import { Disclosure } from '@headlessui/react';
@@ -7,10 +8,12 @@ import {
   ExclamationTriangleIcon, 
   ShieldExclamationIcon, 
   Bars3BottomLeftIcon,
-  InformationCircleIcon 
+  InformationCircleIcon, 
+  ShieldCheckIcon
 } from '@heroicons/react/24/solid';
 import ChatPanel from './ChatPanel';
 import AudioPlayer from './AudioPlayer';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AnalysisPanelProps {
   analysis: AnalysisResult | null;
@@ -45,7 +48,12 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
   const styles = riskLevelStyles[clause.risk_level];
 
   return (
-    <div className={`border-l-4 ${styles.borderColor} ${styles.bgColor} rounded-r-md mb-3`}>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className={`border-l-4 ${styles.borderColor} ${styles.bgColor} rounded-r-md mb-3`}
+    >
       <Disclosure>
         {({ open }) => (
           <>
@@ -66,16 +74,13 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
                       <InformationCircleIcon className="h-5 w-5 text-yellow-500" />
                     </div>
                     <div className="ml-3">
-                      {/* Using dangerouslySetInnerHTML to render bold tags from the backend */}
                       <p className="text-sm" dangerouslySetInnerHTML={{ __html: clause.rag_warning.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                     </div>
                   </div>
                 </div>
               )}
-
               <p className="font-semibold mb-2">Plain Language Explanation:</p>
               <p className="mb-4">{clause.explanation}</p>
-              
               <p className="font-semibold mb-2 text-gray-500">Original Clause Text:</p>
               <blockquote className="text-gray-600 border-l-2 border-gray-300 pl-3 italic">
                 {clause.clause_text}
@@ -84,13 +89,13 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
           </>
         )}
       </Disclosure>
-    </div>
+    </motion.div>
   );
 };
 
 const LoadingSpinner: React.FC = () => (
     <div className="flex flex-col items-center justify-center h-full">
-        <svg className="animate-spin h-12 w-12 text-brand-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg className="animate-spin h-12 w-12 text-brand-green" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
@@ -100,10 +105,12 @@ const LoadingSpinner: React.FC = () => (
 
 const InitialState: React.FC = () => (
     <div className="flex flex-col items-center justify-center text-center h-full">
-         <ShieldExclamationIcon className="h-16 w-16 text-brand-green mb-4" />
-        <h2 className="text-2xl font-bold text-brand-blue font-display mb-2">Detailed Risk Analysis</h2>
+         <div className="p-6 bg-gradient-to-br from-brand-green to-teal-400 rounded-full mb-6 shadow-lg">
+            <ShieldCheckIcon className="h-12 w-12 text-white" />
+         </div>
+        <h2 className="text-2xl font-bold text-brand-blue font-display mb-2">Your Analysis Appears Here</h2>
         <p className="text-brand-text max-w-sm">
-            Upload your document to generate a clause-by-clause breakdown with risk ratings and simple explanations.
+            Once you upload a document, this panel will come alive with AI-powered insights, risk analysis, and interactive tools.
         </p>
     </div>
 );
@@ -121,7 +128,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
 
       return (
         <div className="h-full flex flex-col">
-          <div className="mb-4 p-4 bg-brand-gray rounded-lg">
+          <div className="mb-4 p-4 bg-brand-gray/80 rounded-lg">
             <div className="flex justify-between items-start">
               <h3 className="text-lg font-bold text-brand-blue font-display flex items-center mb-2">
                   <Bars3BottomLeftIcon className="h-6 w-6 mr-2 text-brand-green" />
@@ -146,7 +153,22 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
     return <InitialState />;
   };
 
-  return <div className="bg-white p-6 rounded-lg shadow-lg h-full">{renderContent()}</div>;
+  return (
+    <div className="bg-white/70 backdrop-blur-xl p-6 rounded-lg shadow-lg h-full">
+        <AnimatePresence mode="wait">
+            <motion.div
+                key={analysis ? 'analysis' : 'initial'}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="h-full"
+            >
+                {renderContent()}
+            </motion.div>
+        </AnimatePresence>
+    </div>
+  );
 };
 
 export default AnalysisPanel;
