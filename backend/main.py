@@ -1,6 +1,6 @@
-# backend/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+import shutil
 
 app = FastAPI(
     title="LexiGuard API",
@@ -9,8 +9,8 @@ app = FastAPI(
 )
 
 origins = [
-    "http://localhost:5173", 
-    "http://localhost:3000", 
+    "http://localhost:5173",
+    "http://localhost:3000",
 ]
 
 app.add_middleware(
@@ -23,5 +23,15 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    """A simple endpoint to check if the API is running."""
     return {"status": "ok", "message": "Welcome to the LexiGuard API!"}
+
+# NEW ENDPOINT FOR PHASE 1
+@app.post("/api/upload")
+async def upload_document(file: UploadFile = File(...)):
+    print(f"Received file: {file.filename}, Content-Type: {file.content_type}")
+    
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "message": "File received successfully. Ready for analysis."
+    }
