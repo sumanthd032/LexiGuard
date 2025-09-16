@@ -1,8 +1,22 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException, Form
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 import json
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
 from pydantic import BaseModel
 from ai_processor import extract_text_from_document, analyze_clauses_from_text, get_chat_response
+
+
+try:
+    cred = credentials.Certificate("serviceAccountKey.json")
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    print("Firebase Admin SDK initialized successfully.")
+except Exception as e:
+    print(f"Error initializing Firebase Admin SDK: {e}")
+    db = None
+
 
 app = FastAPI(
     title="LexiGuard API",
@@ -23,9 +37,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+token_auth_scheme = HTTPBearer()
+
+async def get_current_user(token: HTTPAuthorizationCredentials = Depends(token_auth_scheme)):
+    try:
+        decoded_token = auth.verify_id_token(token.credentials)
+        return decoded_token
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid authentication credentials: {e}")
+
 class ChatRequest(BaseModel):
     document_context: str
     message: str
+
+class SaveAnalysisRequest(BaseModel):
+    file_name: str
+    analysis_data: dict
 
 @app.get("/")
 def read_root():
@@ -76,3 +103,39 @@ async def chat_with_document(request: ChatRequest):
         return {"reply": response_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/api/analyses")
+async def save_analysis(
+    request: SaveAnalysisRequest,
+    user: dict = Depends(get_current_user)
+):
+    """Saves a new analysis to the user's document in Firestore."""
+    if not db:
+        raise HTTPException(status_code=500, detail="Firestore client not initialized.")
+    
+    uid = user['uid']
+    try:
+        user_doc_ref = db.collection('analyses').document(uid)
+        user_doc_ref.set({
+            'history': firestore.ArrayUnion([request.dict()])
+        }, merge=True)
+        return {"status": "success", "message": "Analysis saved."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not save analysis: {e}")
+
+@app.get("/api/analyses")
+async def get_analyses(user: dict = Depends(get_current_user)):
+    """Retrieves all past analyses for the authenticated user."""
+    if not db:
+        raise HTTPException(status_code=500, detail="Firestore client not initialized.")
+        
+    uid = user['uid']
+    try:
+        user_doc_ref = db.collection('analyses').document(uid)
+        doc = user_doc_ref.get()
+        if doc.exists:
+            return doc.to_dict().get('history', [])
+        else:
+            return [] 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not retrieve analyses: {e}")

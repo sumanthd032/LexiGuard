@@ -3,8 +3,10 @@ import Header from './components/Header';
 import UploadZone from './components/UploadZone';
 import AnalysisPanel from './components/AnalysisPanel';
 import type { AnalysisResult, ChatMessage } from './types';
+import { useAuth } from './AuthContext';
 
 function App() {
+  const { user } = useAuth(); 
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -49,6 +51,21 @@ function App() {
 
       const result: AnalysisResult = await response.json();
       setAnalysis(result);
+
+       if (user) {
+        const token = await user.getIdToken();
+        await fetch("http://127.0.0.1:8000/api/analyses", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            file_name: uploadedFile.name,
+            analysis_data: result
+          })
+        });
+      }
 
     } catch (err: any) {
       setError(err.message || 'An unknown error occurred.');
