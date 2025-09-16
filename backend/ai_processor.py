@@ -71,3 +71,31 @@ def analyze_clauses_from_text(text_content: str, persona: str) -> str:
     )
     
     return response.text.strip().replace("```json", "").replace("```", "")
+
+def get_chat_response(document_context: str, question: str, chat_history: list = []) -> str:
+    """
+    Generates a conversational response using the document context and a user's question.
+    """
+    pro_model = GenerativeModel("gemini-2.5-pro")
+
+    prompt = f"""
+    You are a helpful legal assistant named LexiGuard. Your task is to answer a user's question based *only* on the provided legal document context.
+
+    **Rules:**
+    1.  Base all your answers strictly on the "Document Context" provided below.
+    2.  Do not invent information or provide general legal advice that is not in the document.
+    3.  If the document does not contain the answer, you must state clearly: "The document does not provide specific information about this."
+    4.  Keep your answers concise and easy to understand.
+
+    ---
+    **Document Context:**
+    {document_context}
+    ---
+
+    **User's Question:**
+    "{question}"
+    """
+
+    response = pro_model.generate_content(prompt)
+    
+    return response.text

@@ -7,4 +7,10 @@ export interface Clause {
 export interface AnalysisResult {
   summary: string;
   clauses: Clause[];
+  full_text: string; 
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model' | 'loading';
+  content: string;
 }

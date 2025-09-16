@@ -1,7 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 import json
-from ai_processor import extract_text_from_document, analyze_clauses_from_text
+from pydantic import BaseModel
+from ai_processor import extract_text_from_document, analyze_clauses_from_text, get_chat_response
 
 app = FastAPI(
     title="LexiGuard API",
@@ -22,6 +23,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class ChatRequest(BaseModel):
+    document_context: str
+    message: str
 
 @app.get("/")
 def read_root():
@@ -48,11 +52,27 @@ async def analyze_document_endpoint(file: UploadFile = File(...), persona: str =
         
         try:
             analysis_result_json = json.loads(analysis_result_str)
+            analysis_result_json['full_text'] = extracted_text 
             return analysis_result_json
         except json.JSONDecodeError:
             print("Error: AI returned an invalid JSON format.")
             print("Raw AI output:", analysis_result_str)
             raise HTTPException(status_code=500, detail="AI returned an invalid format.")
 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@app.post("/api/chat")
+async def chat_with_document(request: ChatRequest):
+    """
+    Handles conversational Q&A about the document.
+    """
+    try:
+        print(f"Received chat message: {request.message}")
+        response_text = get_chat_response(
+            document_context=request.document_context,
+            question=request.message
+        )
+        return {"reply": response_text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,15 +1,17 @@
 import React from 'react';
-import type { AnalysisResult, Clause } from '../types';
+import type { AnalysisResult, ChatMessage, Clause } from '../types';
 import { Disclosure } from '@headlessui/react';
+import ChatPanel from './ChatPanel';
 import { ChevronUpIcon, CheckCircleIcon, ExclamationTriangleIcon, ShieldExclamationIcon, Bars3BottomLeftIcon } from '@heroicons/react/24/solid';
 
 interface AnalysisPanelProps {
   analysis: AnalysisResult | null;
   isLoading: boolean;
   error: string | null;
+  chatHistory: ChatMessage[];
+  onSendMessage: (message: string) => void;
 }
 
-// A mapping from risk level to UI styles and icons
 const riskLevelStyles = {
   Neutral: {
     icon: <CheckCircleIcon className="h-5 w-5 text-green-500" />,
@@ -83,7 +85,7 @@ const InitialState: React.FC = () => (
     </div>
 );
 
-const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error }) => {
+const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error, chatHistory, onSendMessage }) => {
   const renderContent = () => {
     if (isLoading) return <LoadingSpinner />;
     if (error) return <div className="text-danger p-4 bg-red-50 rounded-md"><strong>Error:</strong> {error}</div>;
@@ -91,17 +93,18 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
       return (
         <div className="h-full flex flex-col">
           <div className="mb-4 p-4 bg-brand-gray rounded-lg">
-              <h3 className="text-lg font-bold text-brand-blue font-display flex items-center mb-2">
-                  <Bars3BottomLeftIcon className="h-6 w-6 mr-2 text-brand-green" />
-                  AI Summary
-              </h3>
-              <p className="text-sm text-brand-text">{analysis.summary}</p>
+              {/* ... Summary display ... */}
           </div>
           <div className="flex-grow overflow-y-auto pr-2">
               {analysis.clauses.map((clause, index) => (
                   <ClauseItem key={index} clause={clause} />
               ))}
           </div>
+          {/* --- RENDER THE CHAT PANEL HERE --- */}
+          <ChatPanel 
+            chatHistory={chatHistory}
+            onSendMessage={onSendMessage}
+          />
         </div>
       );
     }
