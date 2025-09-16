@@ -1,0 +1,19 @@
+# Node modules
+frontend/node_modules/
+frontend/dist/
+
+# Python virtual environment and cache
+backend/venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/instance/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.pyc
+
+# Environment files
+.env
+*.env.local
