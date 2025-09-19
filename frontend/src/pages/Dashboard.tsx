@@ -1,12 +1,12 @@
 // frontend/src/pages/Dashboard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Header from '../components/Header';
 import UploadZone from '../components/UploadZone';
 import AnalysisPanel from '../components/AnalysisPanel';
 import HistoryPanel from '../components/HistoryPanel';
 import type { AnalysisResult, ChatMessage } from '../types';
 import { useAuth } from '../AuthContext'; // eslint-disable-line @typescript-eslint/no-unused-vars
-import { ArrowUpOnSquareIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { ArrowUpOnSquareIcon  } from '@heroicons/react/24/outline';
 
 const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://lexiguard-backend-service-59259575711.asia-south1.run.app";
 
@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
     
     // State for managing history data (kept for now, but UI is removed)
     const [history, setHistory] = useState<AnalysisHistoryItem[]>([]); // eslint-disable-line @typescript-eslint/no-unused-vars
-    const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true); // eslint-disable-line @typescript-eslint/no-unused-vars
+    const [isHistoryLoading] = useState<boolean>(true); // eslint-disable-line @typescript-eslint/no-unused-vars
     
     // useEffect hook to fetch history when the user logs in or the component loads
     // useEffect(() => {
