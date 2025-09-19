@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// frontend/src/pages/Dashboard.tsx
+import React, { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import UploadZone from '../components/UploadZone';
 import AnalysisPanel from '../components/AnalysisPanel';
@@ -7,7 +8,16 @@ import type { AnalysisResult, ChatMessage } from '../types';
 import { useAuth } from '../AuthContext';
 import { ArrowUpOnSquareIcon, ClockIcon } from '@heroicons/react/24/outline';
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://lexiguard-backend-service-59259575711.asia-south1.run.app";
+
+interface AnalysisHistoryItem {
+    file_name: string;
+    timestamp: string;
+    analysis_data: AnalysisResult;
+}
+
 const Dashboard: React.FC = () => {
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState<'upload' | 'history'>('upload');
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -16,7 +26,41 @@ const Dashboard: React.FC = () => {
     const [persona, setPersona] = useState<string>('General User');
     const [language, setLanguage] = useState<string>('English');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const { user } = useAuth();
+    
+    // State for managing history data
+    const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
+    const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true);
+    
+    // useEffect hook to fetch history when the user logs in or the component loads
+    useEffect(() => {
+        const fetchHistory = async () => {
+            if (!user) {
+                setIsHistoryLoading(false);
+                setHistory([]); // Clear history if user logs out
+                return;
+            }
+            try {
+                setIsHistoryLoading(true);
+                const token = await user.getIdToken();
+                const response = await fetch(`${apiUrl}/api/analyses`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setHistory(data);
+                } else {
+                    console.error("Failed to fetch history:", response.statusText);
+                    setHistory([]); // Clear history on error
+                }
+            } catch (error) {
+                console.error("Failed to fetch history:", error);
+            } finally {
+                setIsHistoryLoading(false);
+            }
+        };
+        fetchHistory();
+    }, [user]); // This dependency array ensures the effect re-runs when the user state changes
+
 
     const handleFileSelect = (file: File | null) => {
         setUploadedFile(file);
@@ -42,7 +86,7 @@ const Dashboard: React.FC = () => {
         formData.append('language', language);
     
         try {
-          const response = await fetch("http://127.0.0.1:8000/api/analyze", {
+          const response = await fetch(`${apiUrl}/api/analyze`, {
             method: 'POST',
             body: formData,
           });
@@ -57,7 +101,7 @@ const Dashboard: React.FC = () => {
     
           if (user) {
             const token = await user.getIdToken();
-            await fetch("http://127.0.0.1:8000/api/analyses", {
+            await fetch(`${apiUrl}/api/analyses`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -69,6 +113,13 @@ const Dashboard: React.FC = () => {
                 timestamp: new Date().toISOString() // Add timestamp for sorting
               })
             });
+            // Refresh history after saving a new one
+            const updatedHistoryResponse = await fetch(`${apiUrl}/api/analyses`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (updatedHistoryResponse.ok) {
+                setHistory(await updatedHistoryResponse.json());
+            }
           }
         } catch (err: any) {
           setError(err.message || 'An unknown error occurred.');
@@ -86,7 +137,7 @@ const Dashboard: React.FC = () => {
         setChatHistory(prev => [...prev, userMessage, loadingMessage]);
     
         try {
-          const response = await fetch("http://127.0.0.1:8000/api/chat", {
+          const response = await fetch(`${apiUrl}/api/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -158,7 +209,7 @@ const Dashboard: React.FC = () => {
                                 onLanguageChange={setLanguage}
                              />
                         ) : (
-                            <HistoryPanel />
+                            <HistoryPanel history={history} loading={isHistoryLoading} />
                         )}
                     </div>
                 </div>

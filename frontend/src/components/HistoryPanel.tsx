@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../AuthContext';
-import { DocumentTextIcon, ExclamationTriangleIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
+// frontend/src/components/HistoryPanel.tsx
+import React from 'react';
 import { motion } from 'framer-motion';
 import type { AnalysisResult } from '../types';
+import { DocumentTextIcon, ExclamationTriangleIcon, ShieldExclamationIcon } from '@heroicons/react/24/outline';
 
 interface AnalysisHistoryItem {
   file_name: string;
   timestamp: string;
   analysis_data: AnalysisResult;
+}
+
+interface HistoryPanelProps {
+  history: AnalysisHistoryItem[];
+  loading: boolean;
 }
 
 const calculateScore = (analysis_data: AnalysisResult | undefined) => {
@@ -17,36 +22,7 @@ const calculateScore = (analysis_data: AnalysisResult | undefined) => {
     return Math.max(0, 100 - (criticalCount * 10) - (attentionCount * 3));
 };
 
-
-const HistoryPanel: React.FC = () => {
-  const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchHistory = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      try {
-        const token = await user.getIdToken();
-        const response = await fetch("http://127.0.0.1:8000/api/analyses", {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setHistory(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch history:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchHistory();
-  }, [user]);
-
+const HistoryPanel: React.FC<HistoryPanelProps> = ({ history, loading }) => {
   return (
     <div className="h-full flex flex-col">
        <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">My Analyses</h3>
