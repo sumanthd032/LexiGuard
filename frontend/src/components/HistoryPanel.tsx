@@ -95,9 +95,6 @@ const HistoryPanel: React.FC = () => {
                             </div>
                            )}
                         </div>
-                        <p className="text-xs text-gray-400">
-                            {new Date(item.timestamp).toLocaleDateString()}
-                        </p>
                     </div>
                 </motion.div>
             );

@@ -1,7 +1,7 @@
 import React from 'react';
 
 const languages = [
-  'English', 'Hindi', 'Spanish', 'French', 'German', 'Tamil', 'Telugu', 'Mandarin', 'Kannada'
+  'English', 'Hindi', 'Spanish', 'French', 'German', 'Tamil', 'Telugu', 'Mandarin'
 ];
 
 interface LanguageSelectorProps {
