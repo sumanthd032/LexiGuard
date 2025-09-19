@@ -9,8 +9,7 @@ import {
   ShieldExclamationIcon, 
   Bars3BottomLeftIcon,
   InformationCircleIcon, 
-  ShieldCheckIcon,
-  CpuChipIcon
+  ShieldCheckIcon
 } from '@heroicons/react/24/solid'; // Added missing comma
 import ChatPanel from './ChatPanel';
 import AudioPlayer from './AudioPlayer';
