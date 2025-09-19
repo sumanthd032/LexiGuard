@@ -5,7 +5,7 @@ import UploadZone from '../components/UploadZone';
 import AnalysisPanel from '../components/AnalysisPanel';
 import HistoryPanel from '../components/HistoryPanel';
 import type { AnalysisResult, ChatMessage } from '../types';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../AuthContext'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { ArrowUpOnSquareIcon, ClockIcon } from '@heroicons/react/24/outline';
 
 const apiUrl = import.meta.env.VITE_API_BASE_URL || "https://lexiguard-backend-service-59259575711.asia-south1.run.app";
@@ -17,8 +17,8 @@ interface AnalysisHistoryItem {
 }
 
 const Dashboard: React.FC = () => {
-    const { user } = useAuth();
-    const [activeTab, setActiveTab] = useState<'upload' | 'history'>('upload');
+    const { user } = useAuth(); // Keep user for potential future use, like saving analysis
+    const [activeTab, setActiveTab] = useState<'upload'>('upload');
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -27,39 +27,39 @@ const Dashboard: React.FC = () => {
     const [language, setLanguage] = useState<string>('English');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     
-    // State for managing history data
-    const [history, setHistory] = useState<AnalysisHistoryItem[]>([]);
-    const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true);
+    // State for managing history data (kept for now, but UI is removed)
+    const [history, setHistory] = useState<AnalysisHistoryItem[]>([]); // eslint-disable-line @typescript-eslint/no-unused-vars
+    const [isHistoryLoading, setIsHistoryLoading] = useState<boolean>(true); // eslint-disable-line @typescript-eslint/no-unused-vars
     
     // useEffect hook to fetch history when the user logs in or the component loads
-    useEffect(() => {
-        const fetchHistory = async () => {
-            if (!user) {
-                setIsHistoryLoading(false);
-                setHistory([]); // Clear history if user logs out
-                return;
-            }
-            try {
-                setIsHistoryLoading(true);
-                const token = await user.getIdToken();
-                const response = await fetch(`${apiUrl}/api/analyses`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setHistory(data);
-                } else {
-                    console.error("Failed to fetch history:", response.statusText);
-                    setHistory([]); // Clear history on error
-                }
-            } catch (error) {
-                console.error("Failed to fetch history:", error);
-            } finally {
-                setIsHistoryLoading(false);
-            }
-        };
-        fetchHistory();
-    }, [user]); // This dependency array ensures the effect re-runs when the user state changes
+    // useEffect(() => {
+    //     const fetchHistory = async () => {
+    //         if (!user) {
+    //             setIsHistoryLoading(false);
+    //             setHistory([]); // Clear history if user logs out
+    //             return;
+    //         }
+    //         try {
+    //             setIsHistoryLoading(true);
+    //             const token = await user.getIdToken();
+    //             const response = await fetch(`${apiUrl}/api/analyses`, {
+    //                 headers: { 'Authorization': `Bearer ${token}` }
+    //             });
+    //             if (response.ok) {
+    //                 const data = await response.json();
+    //                 setHistory(data);
+    //             } else {
+    //                 console.error("Failed to fetch history:", response.statusText);
+    //                 setHistory([]); // Clear history on error
+    //             }
+    //         } catch (error) {
+    //             console.error("Failed to fetch history:", error);
+    //         } finally {
+    //             setIsHistoryLoading(false);
+    //         }
+    //     };
+    //     fetchHistory();
+    // }, [user]); // This dependency array ensures the effect re-runs when the user state changes
 
 
     const handleFileSelect = (file: File | null) => {
@@ -181,16 +181,6 @@ const Dashboard: React.FC = () => {
                                     } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
                                 >
                                     <ArrowUpOnSquareIcon className="h-5 w-5 mr-2" /> Upload Document
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('history')}
-                                    className={`${
-                                        activeTab === 'history'
-                                        ? 'border-brand-green text-brand-blue'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
-                                >
-                                    <ClockIcon className="h-5 w-5 mr-2" /> History
                                 </button>
                             </nav>
                         </div>
