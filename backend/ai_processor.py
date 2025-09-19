@@ -12,7 +12,7 @@ vertexai.init(project=project_id, location="us-central1")
 
 
 def extract_text_from_document(file_content: bytes, mime_type: str) -> str:
-    vision_model = GenerativeModel("gemini-2.5-pro")
+    vision_model = GenerativeModel("gemini-2.5-flash")
     document_part = Part.from_data(data=file_content, mime_type=mime_type)
     prompt = "Extract all text from this document. Maintain the original structure and line breaks."
     response = vision_model.generate_content([document_part, prompt], stream=False)

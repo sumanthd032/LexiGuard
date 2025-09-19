@@ -9,8 +9,9 @@ import {
   ShieldExclamationIcon, 
   Bars3BottomLeftIcon,
   InformationCircleIcon, 
-  ShieldCheckIcon
-} from '@heroicons/react/24/solid';
+  ShieldCheckIcon,
+  CpuChipIcon
+} from '@heroicons/react/24/solid'; // Added missing comma
 import ChatPanel from './ChatPanel';
 import AudioPlayer from './AudioPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,15 +94,51 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
   );
 };
 
-const LoadingSpinner: React.FC = () => (
-    <div className="flex flex-col items-center justify-center h-full">
-        <svg className="animate-spin h-12 w-12 text-brand-green" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p className="mt-4 text-brand-text font-semibold">Gemini is performing a deep analysis...</p>
+const AnalysisInProgress: React.FC = () => {
+  const steps = [
+    "Parsing document structure...",
+    "Identifying key clauses and provisions...",
+    "Assessing risks with Gemini's advanced logic...",
+    "Generating plain-language explanations...",
+    "Finalizing your personalized report...",
+  ];
+
+  const [currentStep, setCurrentStep] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
+    }, 5500); // Increased duration for each step
+
+    return () => clearInterval(interval);
+  }, [steps.length]);
+
+  return (
+    <div className="flex flex-col items-center justify-center h-full text-center">
+      <div className="mb-6">
+          <svg className="animate-spin h-12 w-12 text-brand-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+      </div>
+      <h2 className="text-2xl font-bold text-brand-blue font-display mb-4">Gemini is on the case!</h2>
+      <div className="w-full max-w-md">
+        <AnimatePresence mode="wait">
+            <motion.p 
+                key={currentStep}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5 }}
+                className="text-brand-text font-semibold"
+            >
+                {steps[currentStep]}
+            </motion.p>
+        </AnimatePresence>
+      </div>
     </div>
-);
+  );
+};
 
 const InitialState: React.FC = () => (
     <div className="flex flex-col items-center justify-center text-center h-full">
@@ -117,7 +154,7 @@ const InitialState: React.FC = () => (
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error, chatHistory, onSendMessage }) => {
   const renderContent = () => {
-    if (isLoading) return <LoadingSpinner />;
+    if (isLoading) return <AnalysisInProgress />;
     if (error) return <div className="text-danger p-4 bg-red-50 rounded-md"><strong>Error:</strong> {error}</div>;
     if (analysis && analysis.clauses) {
       const textForSpeech = `
