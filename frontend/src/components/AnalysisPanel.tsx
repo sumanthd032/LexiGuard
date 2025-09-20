@@ -125,7 +125,7 @@ const AnalysisInProgress: React.FC = () => {
   );
 };
 
-// NEW Chat Widget Component
+// Floating Chat Widget Component
 const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message: string) => void }> = ({ chatHistory, onSendMessage }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -218,7 +218,6 @@ const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message
     </>
   );
 };
-
 
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error, onNewAnalysis, chatHistory, onSendMessage }) => {
   const [filter, setFilter] = useState<'All' | 'Critical' | 'Attention'>('All');
