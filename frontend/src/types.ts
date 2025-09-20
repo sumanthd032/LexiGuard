@@ -9,6 +9,7 @@ export interface AnalysisResult {
   summary: string;
   clauses: Clause[];
   full_text: string; 
+  file_name: string;
 }
 
 export interface ChatMessage {

@@ -1,90 +1,86 @@
-// frontend/src/components/AnalysisPanel.tsx
-import React from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { AnalysisResult, Clause, ChatMessage } from '../types';
 import { Disclosure } from '@headlessui/react';
-import { 
-  ChevronUpIcon, 
-  CheckCircleIcon, 
-  ExclamationTriangleIcon, 
-  ShieldExclamationIcon, 
-  Bars3BottomLeftIcon,
-  InformationCircleIcon, 
-  ShieldCheckIcon
-} from '@heroicons/react/24/solid'; // Added missing comma
-import ChatPanel from './ChatPanel';
-import AudioPlayer from './AudioPlayer';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ChevronUpIcon, CheckCircleIcon, ExclamationTriangleIcon, ShieldExclamationIcon, 
+  InformationCircleIcon, DocumentCheckIcon, MagnifyingGlassIcon,
+  ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon
+} from '@heroicons/react/24/solid';
+import AudioPlayer from './AudioPlayer';
 
 interface AnalysisPanelProps {
-  analysis: AnalysisResult | null;
+  analysis: (AnalysisResult & { file_name?: string }) | null;
   isLoading: boolean;
   error: string | null;
+  onNewAnalysis: () => void;
   chatHistory: ChatMessage[];
   onSendMessage: (message: string) => void;
 }
 
-const riskLevelStyles = {
-  Neutral: {
-    icon: <CheckCircleIcon className="h-5 w-5 text-green-500" />,
-    borderColor: 'border-green-500',
-    bgColor: 'bg-green-50',
-    buttonBg: 'bg-gray-100',
-  },
-  Attention: {
-    icon: <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />,
-    borderColor: 'border-yellow-500',
-    bgColor: 'bg-yellow-50',
-    buttonBg: 'bg-yellow-100',
-  },
-  Critical: {
-    icon: <ShieldExclamationIcon className="h-5 w-5 text-red-500" />,
-    borderColor: 'border-red-500',
-    bgColor: 'bg-red-50',
-    buttonBg: 'bg-red-100',
-  },
-};
+// Visual Gauge for the Wellness Score
+const RiskScoreGauge: React.FC<{ score: number }> = ({ score }) => {
+    let color = 'text-green-500';
+    let ringColor = 'ring-green-500';
+    if (score < 50) {
+        color = 'text-red-500';
+        ringColor = 'ring-red-500';
+    } else if (score < 80) {
+        color = 'text-yellow-500';
+        ringColor = 'ring-yellow-500';
+    }
 
+    return (
+        <div className="text-center flex flex-col items-center justify-center">
+             <p className="text-sm font-medium text-gray-500 mb-2">Legal Wellness Score</p>
+            <div className={`relative w-32 h-32 flex items-center justify-center rounded-full bg-gray-50 ring-4 ${ringColor} ring-opacity-50 shadow-inner`}>
+                <p className={`text-5xl font-bold font-display ${color}`}>{score}</p>
+            </div>
+        </div>
+    );
+}
+
+// Redesigned Clause Item for better readability
 const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
+  const riskLevelStyles = {
+    Neutral: { icon: <CheckCircleIcon className="h-5 w-5 text-green-500" />, borderColor: 'border-green-500' },
+    Attention: { icon: <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />, borderColor: 'border-yellow-500' },
+    Critical: { icon: <ShieldExclamationIcon className="h-5 w-5 text-red-500" />, borderColor: 'border-red-500' },
+  };
   const styles = riskLevelStyles[clause.risk_level];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`border-l-4 ${styles.borderColor} ${styles.bgColor} rounded-r-md mb-3`}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-lg shadow-sm mb-3 border"
     >
       <Disclosure>
         {({ open }) => (
           <>
-            <Disclosure.Button className={`flex w-full justify-between rounded-t-md px-4 py-3 text-left text-sm font-medium text-brand-blue ${open ? '' : 'rounded-b-md'} ${styles.buttonBg} hover:bg-opacity-80 focus:outline-none focus-visible:ring focus-visible:ring-brand-blue focus-visible:ring-opacity-75`}>
-              <div className="flex items-center">
+            <Disclosure.Button className={`flex w-full justify-between items-center text-left text-sm font-medium p-4 rounded-lg border-l-4 ${styles.borderColor} ${open ? 'bg-gray-50' : 'bg-white'} hover:bg-gray-50`}>
+              <div className="flex items-center flex-1 min-w-0">
                 {styles.icon}
-                <span className="ml-2">{clause.risk_level}</span>
+                <p className="ml-3 truncate text-brand-text">{clause.clause_text}</p>
               </div>
-              <ChevronUpIcon
-                className={`${open ? 'rotate-180 transform' : ''} h-5 w-5 text-brand-blue`}
-              />
+              <div className="flex items-center ml-4 flex-shrink-0">
+                  <span className="font-semibold text-gray-700">{clause.risk_level}</span>
+                  <ChevronUpIcon className={`${open ? 'rotate-180' : ''} h-5 w-5 text-gray-500 ml-2 transition-transform`} />
+              </div>
             </Disclosure.Button>
-            <Disclosure.Panel className="px-4 pt-3 pb-4 text-sm text-brand-text">
+            <Disclosure.Panel className="px-4 pt-4 pb-5 text-sm text-brand-text border-t border-gray-200">
               {clause.rag_warning && (
-                <div className="mb-4 p-3 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-r-md">
+                <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-md">
                   <div className="flex">
-                    <div className="flex-shrink-0">
-                      <InformationCircleIcon className="h-5 w-5 text-yellow-500" />
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm" dangerouslySetInnerHTML={{ __html: clause.rag_warning.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
-                    </div>
+                    <div className="flex-shrink-0"><InformationCircleIcon className="h-5 w-5 text-yellow-500" /></div>
+                    <div className="ml-3" dangerouslySetInnerHTML={{ __html: clause.rag_warning.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                   </div>
                 </div>
               )}
-              <p className="font-semibold mb-2">Plain Language Explanation:</p>
-              <p className="mb-4">{clause.explanation}</p>
-              <p className="font-semibold mb-2 text-gray-500">Original Clause Text:</p>
-              <blockquote className="text-gray-600 border-l-2 border-gray-300 pl-3 italic">
-                {clause.clause_text}
-              </blockquote>
+              <h4 className="font-semibold mb-2 text-brand-blue">AI Explanation:</h4>
+              <p className="leading-relaxed">{clause.explanation}</p>
             </Disclosure.Panel>
           </>
         )}
@@ -93,118 +89,229 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
   );
 };
 
+// Engaging "In Progress" component with animated text
 const AnalysisInProgress: React.FC = () => {
   const steps = [
     "Parsing document structure...",
     "Identifying key clauses and provisions...",
     "Assessing risks with Gemini's advanced logic...",
-    "Generating plain-language explanations...",
-    "Finalizing your personalized report...",
+    "Cross-referencing legal guidelines...",
+    "Generating your personalized report...",
   ];
-
-  const [currentStep, setCurrentStep] = React.useState(0);
-
-  React.useEffect(() => {
+  const [currentStep, setCurrentStep] = useState(0);
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, 5500); // Increased duration for each step
-
+    }, 2500);
     return () => clearInterval(interval);
   }, [steps.length]);
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
-      <div className="mb-6">
-          <svg className="animate-spin h-12 w-12 text-brand-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-      </div>
-      <h2 className="text-2xl font-bold text-brand-blue font-display mb-4">Gemini is on the case!</h2>
-      <div className="w-full max-w-md">
-        <AnimatePresence mode="wait">
-            <motion.p 
-                key={currentStep}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.5 }}
-                className="text-brand-text font-semibold"
-            >
-                {steps[currentStep]}
-            </motion.p>
-        </AnimatePresence>
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-16 h-16 border-4 border-t-brand-green border-gray-200 rounded-full" />
+        <h2 className="mt-6 text-brand-blue font-bold text-2xl font-display">Analyzing Your Document</h2>
+        <div className="w-full max-w-md mt-4 h-6">
+            <AnimatePresence mode="wait">
+                <motion.p 
+                    key={currentStep}
+                    initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.4 }} className="text-brand-text font-semibold">
+                    {steps[currentStep]}
+                </motion.p>
+            </AnimatePresence>
       </div>
     </div>
   );
 };
 
-const InitialState: React.FC = () => (
-    <div className="flex flex-col items-center justify-center text-center h-full">
-         <div className="p-6 bg-gradient-to-br from-brand-green to-teal-400 rounded-full mb-6 shadow-lg">
-            <ShieldCheckIcon className="h-12 w-12 text-white" />
-         </div>
-        <h2 className="text-2xl font-bold text-brand-blue font-display mb-2">Your Analysis Appears Here</h2>
-        <p className="text-brand-text max-w-sm">
-            Once you upload a document, this panel will come alive with AI-powered insights, risk analysis, and interactive tools.
-        </p>
-    </div>
-);
+// NEW Chat Widget Component
+const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message: string) => void }> = ({ chatHistory, onSendMessage }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [input, setInput] = useState('');
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error, chatHistory, onSendMessage }) => {
-  const renderContent = () => {
-    if (isLoading) return <AnalysisInProgress />;
-    if (error) return <div className="text-danger p-4 bg-red-50 rounded-md"><strong>Error:</strong> {error}</div>;
-    if (analysis && analysis.clauses) {
-      const textForSpeech = `
-        Summary: ${analysis.summary}. 
-        Now, for the clause analysis. 
-        ${analysis.clauses.map((c, i) => `Clause ${i + 1}. Risk level: ${c.risk_level}. Explanation: ${c.explanation}.`).join(' ')}
-      `;
-
-      return (
-        <div className="h-full flex flex-col">
-          <div className="mb-4 p-4 bg-brand-gray/80 rounded-lg">
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-bold text-brand-blue font-display flex items-center mb-2">
-                  <Bars3BottomLeftIcon className="h-6 w-6 mr-2 text-brand-green" />
-                  AI Summary
-              </h3>
-              <AudioPlayer textToRead={textForSpeech} />
-            </div>
-            <p className="text-sm text-brand-text">{analysis.summary}</p>
-          </div>
-          <div className="flex-grow overflow-y-auto pr-2">
-              {analysis.clauses.map((clause, index) => (
-                  <ClauseItem key={index} clause={clause} />
-              ))}
-          </div>
-          <ChatPanel 
-            chatHistory={chatHistory}
-            onSendMessage={onSendMessage}
-          />
-        </div>
-      );
+  useEffect(() => {
+    if (isOpen && chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-    return <InitialState />;
+  }, [chatHistory, isOpen]);
+
+  const handleSend = () => {
+    if (input.trim()) {
+      onSendMessage(input);
+      setInput('');
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSend();
   };
 
   return (
-    <div className="bg-white/70 backdrop-blur-xl p-6 rounded-lg shadow-lg h-full">
-        <AnimatePresence mode="wait">
+    <>
+      <div className="fixed bottom-8 right-8 z-50">
+        <AnimatePresence>
+          {isOpen && (
             <motion.div
-                key={analysis ? 'analysis' : 'initial'}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="h-full"
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="w-[24rem] h-[32rem] bg-white rounded-2xl shadow-2xl flex flex-col origin-bottom-right"
             >
-                {renderContent()}
+              <div className="flex justify-between items-center p-4 border-b bg-brand-gray rounded-t-2xl flex-shrink-0">
+                <h3 className="text-lg font-bold text-brand-blue font-display">AI Assistant</h3>
+                <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-brand-blue">
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4">
+                {chatHistory.length === 0 && (
+                     <div className="text-center text-sm text-gray-400 h-full flex flex-col justify-center">
+                        <p>Ask questions about your document like:</p>
+                        <p className="mt-2 font-medium text-gray-500">"What are the penalties for late payment?"</p>
+                    </div>
+                )}
+                {chatHistory.map((msg, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-xs px-4 py-2 rounded-lg shadow-sm ${ msg.role === 'user' ? 'bg-brand-green text-white rounded-br-none' : 'bg-gray-100 text-brand-text rounded-bl-none'}`}>
+                      {msg.role === 'loading' ? (
+                        <div className="flex items-center space-x-1.5">
+                          <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></span>
+                          <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></span>
+                          <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></span>
+                        </div>
+                      ) : ( <p className="text-sm whitespace-pre-wrap">{msg.content}</p> )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="p-4 border-t bg-brand-gray rounded-b-2xl flex-shrink-0">
+                <div className="flex items-center">
+                  <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
+                    placeholder='Ask a "What If?" question...'
+                    className="w-full border-gray-300 rounded-full px-4 py-2 shadow-sm focus:border-brand-green focus:ring-brand-green"
+                    disabled={chatHistory.some((m) => m.role === 'loading')} />
+                  <button onClick={handleSend} disabled={chatHistory.some((m) => m.role === 'loading')}
+                    className="ml-3 bg-brand-green hover:bg-opacity-90 text-white p-2.5 rounded-full disabled:bg-gray-400 transition-transform hover:scale-110">
+                    <PaperAirplaneIcon className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
+          )}
         </AnimatePresence>
+        <motion.button
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+          onClick={() => setIsOpen(!isOpen)}
+          className="bg-brand-blue text-white rounded-full p-4 shadow-lg hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-blue"
+        >
+          {isOpen ? <XMarkIcon className="h-8 w-8" /> : <ChatBubbleLeftRightIcon className="h-8 w-8" />}
+        </motion.button>
+      </div>
+    </>
+  );
+};
+
+
+const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error, onNewAnalysis, chatHistory, onSendMessage }) => {
+  const [filter, setFilter] = useState<'All' | 'Critical' | 'Attention'>('All');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const wellnessScore = useMemo(() => {
+    if (!analysis?.clauses) return 0;
+    const critical = analysis.clauses.filter(c => c.risk_level === 'Critical').length;
+    const attention = analysis.clauses.filter(c => c.risk_level === 'Attention').length;
+    return Math.max(0, 100 - (critical * 10) - (attention * 3));
+  }, [analysis]);
+
+  const filteredClauses = useMemo(() => {
+    if (!analysis?.clauses) return [];
+    return analysis.clauses.filter(clause => {
+      const matchesFilter = filter === 'All' || clause.risk_level === filter;
+      const matchesSearch = searchTerm === '' || 
+        clause.clause_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        clause.explanation.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesFilter && matchesSearch;
+    });
+  }, [analysis, filter, searchTerm]);
+
+  if (isLoading) return <AnalysisInProgress />;
+  if (error) return (
+      <div className="flex flex-col items-center justify-center h-full text-center p-4 bg-red-50 rounded-lg">
+          <ShieldExclamationIcon className="h-12 w-12 text-red-400 mb-4" />
+          <h3 className="text-xl font-bold text-red-800">Analysis Failed</h3>
+          <p className="text-red-700 mt-2">{error}</p>
+          <button onClick={onNewAnalysis} className="mt-6 flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700">
+              Try a New Analysis
+          </button>
+      </div>
+  );
+  if (!analysis) return null;
+
+  const textForSpeech = `Summary: ${analysis.summary}.`;
+
+  return (
+    <div className="h-full flex flex-col">
+        <div className="flex items-center justify-between pb-4 border-b border-gray-200 flex-shrink-0">
+            <div>
+                <h1 className="text-3xl font-bold text-brand-blue font-display">Analysis Report</h1>
+                <p className="text-gray-500">For <span className="font-semibold text-brand-text">{analysis.file_name || 'your document'}</span></p>
+            </div>
+            <AudioPlayer textToRead={textForSpeech} />
+        </div>
+
+        <div className="my-8 grid grid-cols-1 md:grid-cols-3 gap-8 flex-shrink-0">
+            <motion.div initial={{ opacity: 0, y:20 }} animate={{ opacity: 1, y:0 }} transition={{ delay: 0.1 }} className="md:col-span-2 bg-white/80 p-6 rounded-lg shadow-md">
+                <h3 className="text-lg font-semibold text-brand-blue flex items-center mb-3"><DocumentCheckIcon className="h-6 w-6 mr-2 text-brand-green"/>Executive Summary</h3>
+                <p className="text-brand-text leading-relaxed">{analysis.summary}</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y:20 }} animate={{ opacity: 1, y:0 }} transition={{ delay: 0.2 }} className="bg-white/80 p-6 rounded-lg shadow-md flex items-center justify-center">
+                <RiskScoreGauge score={wellnessScore} />
+            </motion.div>
+        </div>
+
+        <div className="flex flex-col flex-grow min-h-0">
+            <h3 className="text-xl font-bold text-brand-blue font-display mb-4">Clause Breakdown</h3>
+            <div className="flex flex-col md:flex-row gap-4 mb-4 flex-shrink-0">
+                <div className="flex-grow relative">
+                    <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" />
+                    <input type="text" placeholder="Search clauses..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-brand-green focus:border-brand-green" />
+                </div>
+                <div className="flex-shrink-0">
+                    <div className="flex items-center p-1 bg-gray-200/70 rounded-md">
+                        {(['All', 'Critical', 'Attention'] as const).map(f => (
+                            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 text-sm font-semibold rounded ${filter === f ? 'bg-white text-brand-blue shadow' : 'text-gray-600'}`}>
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex-grow overflow-y-auto pr-2 -mr-2">
+                <AnimatePresence>
+                {filteredClauses.length > 0 ? ( filteredClauses.map((clause, index) => <ClauseItem key={`${clause.clause_text}-${index}`} clause={clause} />) ) : (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-10 text-gray-500">
+                        <p>No clauses match your search or filter.</p>
+                    </motion.div>
+                )}
+                </AnimatePresence>
+            </div>
+        </div>
+        
+        {/* Render the floating chat widget */}
+        <ChatWidget chatHistory={chatHistory} onSendMessage={onSendMessage} />
     </div>
   );
 };
 
 export default AnalysisPanel;
+
