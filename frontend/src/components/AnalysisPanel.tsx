@@ -94,15 +94,22 @@ const AnalysisInProgress: React.FC = () => {
   const steps = [
     "Parsing document structure...",
     "Identifying key clauses and provisions...",
-    "Assessing risks with Gemini's advanced logic...",
-    "Cross-referencing legal guidelines...",
-    "Generating your personalized report...",
+    "Extracting relevant case precedents...",
+    "Analyzing contractual obligations...",
+    "Highlighting compliance requirements...",
+    "Detecting potential ambiguities in language...",
+    "Evaluating financial and legal implications...",
+    "Mapping dependencies across clauses...",
+    "Summarizing critical insights for review...",
+    "Structuring recommendations for decision-making...",
+    "Finalizing the risk assessment model...",
+    "Compiling your comprehensive legal summary..."
   ];
   const [currentStep, setCurrentStep] = useState(0);
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
-    }, 2500);
+    }, 5000);
     return () => clearInterval(interval);
   }, [steps.length]);
 
