@@ -1,6 +1,14 @@
-// frontend/src/pages/LandingPage.tsx
+/**
+ * @file LandingPage.tsx
+ * @description The main marketing and landing page for the LexiGuard application.
+ * It outlines the features, benefits, and provides calls-to-action for new users.
+ */
+
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { motion, type Variants } from 'framer-motion';
+
+import Header from '../components/Header';
 import { 
   DocumentArrowUpIcon, 
   SparklesIcon, 
@@ -9,12 +17,10 @@ import {
   ChatBubbleLeftRightIcon,
   LanguageIcon
 } from '@heroicons/react/24/solid';
-import Header from '../components/Header';
-// Import the 'Variants' type from framer-motion
-import { motion, type Variants } from 'framer-motion';
 
-// --- Re-usable Animation Variants ---
-// Apply the 'Variants' type to your constants
+
+// Re-usable Animation Variants for Framer Motion
+// Defines a container animation that staggers the appearance of its children.
 const containerVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
@@ -26,17 +32,19 @@ const containerVariants: Variants = {
   },
 };
 
+// Defines an animation for individual items, making them fade and slide in.
 const itemVariants: Variants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
-    // The error was here: TypeScript inferred `type` as `string`
-    // but by using the 'Variants' type, it's now correctly checked.
     transition: { type: 'spring', stiffness: 100 },
   },
 };
 
+// Static Page Content
+
+// An array of feature objects to be displayed in the "Features" section.
 const features = [
   {
     name: 'In-Depth Risk Analysis',
@@ -55,6 +63,7 @@ const features = [
   },
 ];
 
+// An array of testimonial objects for the "Testimonials" section.
 const testimonials = [
   {
     quote: "LexiGuard turned a 40-page rental agreement into something I could understand in 5 minutes. The risk heatmap is a game-changer.",
@@ -73,12 +82,16 @@ const testimonials = [
   },
 ];
 
+/**
+ * The main landing page component.
+ */
 const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-brand-gray overflow-x-hidden">
       <Header />
       <main>
-        {/* --- Hero Section --- */}
+        
+        {/* Hero Section */}
         <section className="relative bg-white pt-16 pb-20 lg:pt-24 lg:pb-28">
           <div className="absolute inset-0 bg-grid-gray-200 [mask-image:linear-gradient(to_bottom,white,transparent)]"></div>
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -109,7 +122,7 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* --- How It Works Section --- */}
+        {/* How It Works Section */}
         <section className="py-16 bg-brand-gray sm:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -142,7 +155,7 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
-        {/* --- Features Section with Glassmorphism --- */}
+        {/* Features Section */}
         <section className="py-16 bg-white sm:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
@@ -172,7 +185,7 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
         
-        {/* --- Testimonials Section --- */}
+        {/* Testimonials Section */}
         <section className="py-16 bg-brand-gray sm:py-24">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
@@ -199,7 +212,7 @@ const LandingPage: React.FC = () => {
             </div>
         </section>
 
-        {/* --- Final CTA Section --- */}
+        {/* Final CTA Section */}
         <section className="bg-white">
             <div className="max-w-4xl mx-auto text-center py-16 px-4 sm:py-20 sm:px-6 lg:px-8">
                 <h2 className="text-3xl font-extrabold text-brand-blue sm:text-4xl font-display">

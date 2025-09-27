@@ -1,25 +1,48 @@
+/**
+ * @file AnalysisPanel.tsx
+ * @description This file contains the main React component for displaying the document analysis report.
+ * It includes sub-components for a risk score gauge, individual clause items, a loading state,
+ * and a floating chat widget.
+ */
+
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import type { AnalysisResult, Clause, ChatMessage } from '../types';
+
+// Third-party libraries for UI and animations
 import { Disclosure } from '@headlessui/react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Icon imports
 import { 
   ChevronUpIcon, CheckCircleIcon, ExclamationTriangleIcon, ShieldExclamationIcon, 
   InformationCircleIcon, DocumentCheckIcon, MagnifyingGlassIcon,
   ChatBubbleLeftRightIcon, XMarkIcon, PaperAirplaneIcon
 } from '@heroicons/react/24/solid';
+
+// Custom component imports
 import AudioPlayer from './AudioPlayer';
 
+/**
+ * @interface AnalysisPanelProps
+ * @description Defines the props for the main AnalysisPanel component.
+ */
 interface AnalysisPanelProps {
-  analysis: (AnalysisResult & { file_name?: string }) | null;
-  isLoading: boolean;
-  error: string | null;
-  onNewAnalysis: () => void;
-  chatHistory: ChatMessage[];
-  onSendMessage: (message: string) => void;
+  analysis: (AnalysisResult & { file_name?: string }) | null; // The analysis data or null if none.
+  isLoading: boolean; // Flag to indicate if analysis is in progress.
+  error: string | null; // Error message if the analysis failed.
+  onNewAnalysis: () => void; // Callback to start a new analysis.
+  chatHistory: ChatMessage[]; // The history of the chat conversation.
+  onSendMessage: (message: string) => void; // Callback to send a new chat message.
 }
 
-// Visual Gauge for the Wellness Score
+/**
+ * A circular gauge to visually represent the document's "Legal Wellness Score".
+ * The color of the gauge changes based on the score.
+ * @param {object} props - The component props.
+ * @param {number} props.score - The wellness score from 0 to 100.
+ */
 const RiskScoreGauge: React.FC<{ score: number }> = ({ score }) => {
+    // Determine color based on the score thresholds.
     let color = 'text-green-500';
     let ringColor = 'ring-green-500';
     if (score < 50) {
@@ -40,8 +63,14 @@ const RiskScoreGauge: React.FC<{ score: number }> = ({ score }) => {
     );
 }
 
-// Redesigned Clause Item for better readability
+/**
+ * A collapsible component that displays a single clause from the analysis.
+ * It shows the risk level, the clause text, and a detailed explanation.
+ * @param {object} props - The component props.
+ * @param {Clause} props.clause - The clause object to display.
+ */
 const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
+  // Map risk levels to specific icons and border colors for visual distinction.
   const riskLevelStyles = {
     Neutral: { icon: <CheckCircleIcon className="h-5 w-5 text-green-500" />, borderColor: 'border-green-500' },
     Attention: { icon: <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500" />, borderColor: 'border-yellow-500' },
@@ -71,10 +100,12 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
               </div>
             </Disclosure.Button>
             <Disclosure.Panel className="px-4 pt-4 pb-5 text-sm text-brand-text border-t border-gray-200">
+              {/* Conditionally render RAG warning if it exists */}
               {clause.rag_warning && (
                 <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-md">
                   <div className="flex">
                     <div className="flex-shrink-0"><InformationCircleIcon className="h-5 w-5 text-yellow-500" /></div>
+                    {/* Render HTML content safely after converting markdown bold to <strong> tags */}
                     <div className="ml-3" dangerouslySetInnerHTML={{ __html: clause.rag_warning.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                   </div>
                 </div>
@@ -89,28 +120,25 @@ const ClauseItem: React.FC<{ clause: Clause }> = ({ clause }) => {
   );
 };
 
-// Engaging "In Progress" component with animated text
+/**
+ * An engaging loading component that displays an animated spinner and cycles through
+ * various analysis steps to keep the user informed.
+ */
 const AnalysisInProgress: React.FC = () => {
   const steps = [
-    "Parsing document structure...",
-    "Identifying key clauses and provisions...",
-    "Extracting relevant case precedents...",
-    "Analyzing contractual obligations...",
-    "Highlighting compliance requirements...",
-    "Detecting potential ambiguities in language...",
-    "Evaluating financial and legal implications...",
-    "Mapping dependencies across clauses...",
-    "Summarizing critical insights for review...",
-    "Structuring recommendations for decision-making...",
-    "Finalizing the risk assessment model...",
-    "Compiling your comprehensive legal summary..."
+    "Parsing document structure...", "Identifying key clauses and provisions...", "Extracting relevant case precedents...",
+    "Analyzing contractual obligations...", "Highlighting compliance requirements...", "Detecting potential ambiguities in language...",
+    "Evaluating financial and legal implications...", "Mapping dependencies across clauses...", "Summarizing critical insights for review...",
+    "Structuring recommendations for decision-making...", "Finalizing the risk assessment model...", "Compiling your comprehensive legal summary..."
   ];
   const [currentStep, setCurrentStep] = useState(0);
+
+  // Effect to cycle through the loading steps every 5 seconds.
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
     }, 5000);
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // Cleanup on component unmount.
   }, [steps.length]);
 
   return (
@@ -132,12 +160,18 @@ const AnalysisInProgress: React.FC = () => {
   );
 };
 
-// Floating Chat Widget Component
+/**
+ * A floating chat widget that allows users to ask questions about the analyzed document.
+ * @param {object} props - The component props.
+ * @param {ChatMessage[]} props.chatHistory - Array of chat messages.
+ * @param {(message: string) => void} props.onSendMessage - Function to call when a message is sent.
+ */
 const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message: string) => void }> = ({ chatHistory, onSendMessage }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Effect to auto-scroll to the bottom of the chat window when new messages arrive.
   useEffect(() => {
     if (isOpen && chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -167,12 +201,14 @@ const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
               className="w-[24rem] h-[32rem] bg-white rounded-2xl shadow-2xl flex flex-col origin-bottom-right"
             >
+              {/* Chat Header */}
               <div className="flex justify-between items-center p-4 border-b bg-brand-gray rounded-t-2xl flex-shrink-0">
                 <h3 className="text-lg font-bold text-brand-blue font-display">AI Assistant</h3>
                 <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-brand-blue">
                   <XMarkIcon className="h-6 w-6" />
                 </button>
               </div>
+              {/* Message Display Area */}
               <div ref={chatContainerRef} className="flex-grow overflow-y-auto p-4 space-y-4">
                 {chatHistory.length === 0 && (
                      <div className="text-center text-sm text-gray-400 h-full flex flex-col justify-center">
@@ -188,6 +224,7 @@ const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div className={`max-w-xs px-4 py-2 rounded-lg shadow-sm ${ msg.role === 'user' ? 'bg-brand-green text-white rounded-br-none' : 'bg-gray-100 text-brand-text rounded-bl-none'}`}>
+                      {/* Show a loading animation for pending bot responses */}
                       {msg.role === 'loading' ? (
                         <div className="flex items-center space-x-1.5">
                           <span className="w-2 h-2 bg-gray-500 rounded-full animate-pulse" style={{ animationDelay: '0s' }}></span>
@@ -199,6 +236,7 @@ const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message
                   </motion.div>
                 ))}
               </div>
+              {/* Message Input Area */}
               <div className="p-4 border-t bg-brand-gray rounded-b-2xl flex-shrink-0">
                 <div className="flex items-center">
                   <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyPress={handleKeyPress}
@@ -214,6 +252,7 @@ const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message
             </motion.div>
           )}
         </AnimatePresence>
+        {/* Chat Toggle Button */}
         <motion.button
           whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
           onClick={() => setIsOpen(!isOpen)}
@@ -226,17 +265,26 @@ const ChatWidget: React.FC<{ chatHistory: ChatMessage[]; onSendMessage: (message
   );
 };
 
+/**
+ * The main component that orchestrates the display of the analysis results.
+ * It manages the UI state for loading, errors, filtering, and searching clauses.
+ * @param {AnalysisPanelProps} props - The props for the component.
+ */
 const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, error, onNewAnalysis, chatHistory, onSendMessage }) => {
+  // State for filtering clauses by risk level and searching by text.
   const [filter, setFilter] = useState<'All' | 'Critical' | 'Attention'>('All');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Memoized calculation for the wellness score to prevent recalculation on every render.
   const wellnessScore = useMemo(() => {
     if (!analysis?.clauses) return 0;
     const critical = analysis.clauses.filter(c => c.risk_level === 'Critical').length;
     const attention = analysis.clauses.filter(c => c.risk_level === 'Attention').length;
+    // Score is calculated by deducting points for risky clauses.
     return Math.max(0, 100 - (critical * 10) - (attention * 3));
   }, [analysis]);
 
+  // Memoized filtering of clauses based on the current filter and search term.
   const filteredClauses = useMemo(() => {
     if (!analysis?.clauses) return [];
     return analysis.clauses.filter(clause => {
@@ -248,6 +296,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
     });
   }, [analysis, filter, searchTerm]);
 
+  // Conditional rendering based on the application state.
   if (isLoading) return <AnalysisInProgress />;
   if (error) return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4 bg-red-50 rounded-lg">
@@ -259,12 +308,14 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
           </button>
       </div>
   );
-  if (!analysis) return null;
+  if (!analysis) return null; // Render nothing if there is no analysis data yet.
 
+  // Prepare text for the text-to-speech audio player.
   const textForSpeech = `Summary: ${analysis.summary}.`;
 
   return (
     <div className="h-full flex flex-col">
+        {/* Header Section */}
         <div className="flex items-center justify-between pb-4 border-b border-gray-200 flex-shrink-0">
             <div>
                 <h1 className="text-3xl font-bold text-brand-blue font-display">Analysis Report</h1>
@@ -273,6 +324,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
             <AudioPlayer textToRead={textForSpeech} />
         </div>
 
+        {/* Summary and Score Grid */}
         <div className="my-8 grid grid-cols-1 md:grid-cols-3 gap-8 flex-shrink-0">
             <motion.div initial={{ opacity: 0, y:20 }} animate={{ opacity: 1, y:0 }} transition={{ delay: 0.1 }} className="md:col-span-2 bg-white/80 p-6 rounded-lg shadow-md">
                 <h3 className="text-lg font-semibold text-brand-blue flex items-center mb-3"><DocumentCheckIcon className="h-6 w-6 mr-2 text-brand-green"/>Executive Summary</h3>
@@ -283,8 +335,10 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
             </motion.div>
         </div>
 
+        {/* Clause Breakdown Section */}
         <div className="flex flex-col flex-grow min-h-0">
             <h3 className="text-xl font-bold text-brand-blue font-display mb-4">Clause Breakdown</h3>
+            {/* Search and Filter Controls */}
             <div className="flex flex-col md:flex-row gap-4 mb-4 flex-shrink-0">
                 <div className="flex-grow relative">
                     <MagnifyingGlassIcon className="h-5 w-5 text-gray-400 absolute top-1/2 left-3 -translate-y-1/2" />
@@ -302,6 +356,7 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
                 </div>
             </div>
 
+            {/* Scrollable list of clauses */}
             <div className="flex-grow overflow-y-auto pr-2 -mr-2">
                 <AnimatePresence>
                 {filteredClauses.length > 0 ? ( filteredClauses.map((clause, index) => <ClauseItem key={`${clause.clause_text}-${index}`} clause={clause} />) ) : (
@@ -320,4 +375,3 @@ const AnalysisPanel: React.FC<AnalysisPanelProps> = ({ analysis, isLoading, erro
 };
 
 export default AnalysisPanel;
-
