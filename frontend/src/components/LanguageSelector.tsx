@@ -1,14 +1,30 @@
+/**
+ * @file LanguageSelector.tsx
+ * @description A simple dropdown component that allows users to select a language for their analysis report.
+ */
+
 import React from 'react';
 
+// A predefined list of supported languages for the analysis.
 const languages = [
   'English', 'Hindi', 'Spanish', 'French', 'German', 'Tamil', 'Telugu', 'Mandarin'
 ];
 
+/**
+ * @interface LanguageSelectorProps
+ * @description Defines the props for the LanguageSelector component.
+ */
 interface LanguageSelectorProps {
+  // The currently selected language.
   selectedLanguage: string;
+  // A callback function that is triggered when the user selects a new language.
   onLanguageChange: (language: string) => void;
 }
 
+/**
+ * A reusable dropdown component for selecting a language.
+ * @param {LanguageSelectorProps} props - The props for the component.
+ */
 const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguage, onLanguageChange }) => {
   return (
     <div className="w-full my-6">
@@ -22,6 +38,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({ selectedLanguage, o
         value={selectedLanguage}
         onChange={(e) => onLanguageChange(e.target.value)}
       >
+        {/* Map over the languages array to create an <option> for each one. */}
         {languages.map((lang) => (
           <option key={lang}>{lang}</option>
         ))}

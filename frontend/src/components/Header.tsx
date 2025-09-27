@@ -1,19 +1,26 @@
+/**
+ * @file Header.tsx
+ * @description The main site header, showing the logo and handling user authentication display.
+ */
+
 import React, { Fragment } from 'react';
 import { ShieldCheckIcon } from '@heroicons/react/24/solid';
-import { useAuth } from '../AuthContext';
-import { signOut } from 'firebase/auth';
-import { auth } from '../firebase';
-import { Link } from 'react-router-dom';
-import { Menu, Transition } from '@headlessui/react';
 import { UserCircleIcon, ArrowLeftOnRectangleIcon } from '@heroicons/react/24/outline';
+import { Menu, Transition } from '@headlessui/react';
+import { Link } from 'react-router-dom';
 
+import { useAuth } from '../AuthContext';
+import { auth } from '../firebase';
+import { signOut } from 'firebase/auth';
+
+// The main header component for the application.
 const Header: React.FC = () => {
   const { user } = useAuth();
 
+  // A simple function to handle user sign-out with Firebase.
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      // Optional: Redirect or show a success message
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -23,7 +30,8 @@ const Header: React.FC = () => {
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo and Title - now a link to the landing page */}
+          
+          {/* Logo and Title - links back to the homepage */}
           <Link to="/" className="flex items-center space-x-2">
             <ShieldCheckIcon className="h-8 w-8 text-brand-green" />
             <h1 className="text-2xl font-bold text-brand-blue font-display">
@@ -31,9 +39,10 @@ const Header: React.FC = () => {
             </h1>
           </Link>
           
+          {/* User Authentication Section */}
           <div className="flex items-center">
             {user ? (
-              // If user is logged in, show a professional dropdown menu
+              // If the user is logged in, show a dropdown menu.
               <Menu as="div" className="relative inline-block text-left">
                 <div>
                   <Menu.Button className="flex items-center rounded-full bg-gray-100 text-sm hover:ring-2 hover:ring-brand-green hover:ring-offset-2 focus:outline-none focus:ring-2 focus:ring-brand-green focus:ring-offset-2">
@@ -78,7 +87,7 @@ const Header: React.FC = () => {
                 </Transition>
               </Menu>
             ) : (
-              // If user is not logged in, show a styled sign-in button
+              // If the user is not logged in, show a simple "Sign In" button.
               <Link
                 to="/auth"
                 className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-brand-green hover:bg-opacity-90 shadow-sm transition-transform hover:-translate-y-0.5"
