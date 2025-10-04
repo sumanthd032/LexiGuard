@@ -16,9 +16,9 @@ from ai_processor import (
 
 
 # Firebase Initialization
-# Let's connect to Firebase. 
+# Let's connect to Firebase.
 SECRET_PATH = "/etc/secrets/firebase-service-account/latest"
-db = None 
+db = None
 
 try:
     # Check if we're running in a secure cloud environment.
@@ -29,7 +29,7 @@ try:
         cred = credentials.Certificate("serviceAccountKey.json")
 
     firebase_admin.initialize_app(cred)
-    db = firestore.client() 
+    db = firestore.client()
 except Exception as e:
     # If this fails, the app is pretty much useless, so we print a critical error.
     print(f"CRITICAL: Error initializing Firebase Admin SDK: {e}")
@@ -38,9 +38,16 @@ except Exception as e:
 # FastAPI App Setup
 app = FastAPI(title="LexiGuard API")
 
+# Specify exact origins for security in production.
+origins = [
+    "http://localhost:5173", 
+    "http://localhost:3000", 
+    "https://lexi-guard.vercel.app", # deployed Vercel frontend URL
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=origins, 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -142,7 +149,7 @@ async def save_analysis(
     if not db:
         raise HTTPException(status_code=500, detail="Database is not connected.")
 
-    uid = user["uid"] 
+    uid = user["uid"]
     try:
         # Find the document for this user (or create it if it's their first time).
         user_doc_ref = db.collection("analyses").document(uid)
